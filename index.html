@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="Мобильный QR-помощник для личной отметки посещаемости MIREA.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MIREA QR">
+  <meta name="referrer" content="no-referrer">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+  <title>MIREA QR</title>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div class="brand-mark" aria-hidden="true"><span>QR</span></div>
+      <div class="brand-copy">
+        <div class="eyebrow">МОБИЛЬНЫЙ ПОМОЩНИК</div>
+        <h1>MIREA <span>QR</span></h1>
+        <p>Войди один раз · сканируй · отметься</p>
+      </div>
+      <div id="auth-pill" class="status-pill"><i></i><span id="auth-pill-text">Проверяю вход…</span></div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="kicker">ЛИЧНАЯ ОТМЕТКА</p>
+        <h2>Один скан —<br><em>один запрос.</em></h2>
+        <p class="hero-text">После входа считай QR-код занятия. Приложение отправит запрос для твоего аккаунта и покажет ответ сервера.</p>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="scan-frame"><b></b><b></b><b></b><b></b><div class="qr-motif">▦</div><div class="scan-line"></div></div>
+      </div>
+    </section>
+
+    <section class="card auth-card" aria-labelledby="auth-heading">
+      <div class="section-heading">
+        <div class="number">01</div>
+        <div>
+          <h2 id="auth-heading">Вход через МИРЭА</h2>
+          <p>Пароль используется только для попытки входа и не сохраняется приложением.</p>
+        </div>
+      </div>
+      <div id="login-panel">
+        <form id="login-form" autocomplete="on">
+          <label class="field-label" for="username-input">Логин МИРЭА</label>
+          <input id="username-input" name="username" type="text" autocomplete="username" maxlength="256" placeholder="Логин или университетская почта" required>
+          <label class="field-label" for="password-input">Пароль МИРЭА</label>
+          <input id="password-input" name="password" type="password" autocomplete="current-password" maxlength="1024" placeholder="Пароль" required>
+          <button id="login-button" class="button primary full-width" type="submit">Войти через сервер МИРЭА</button>
+        </form>
+        <p class="tiny-note">Используй форму только на собственном HTTPS-размещении, которому доверяешь. Это стороннее приложение, не официальный сайт МИРЭА.</p>
+      </div>
+      <div id="otp-panel" hidden>
+        <form id="otp-form" autocomplete="one-time-code">
+          <label class="field-label" for="otp-input">Код подтверждения</label>
+          <input id="otp-input" name="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="32" placeholder="Код из письма / 2FA" required>
+          <button id="otp-button" class="button primary full-width" type="submit">Подтвердить вход</button>
+        </form>
+        <p class="tiny-note">Код обрабатывается только для завершения текущего входа. Если запрос устарел, начни авторизацию заново.</p>
+      </div>
+      <div id="signed-in-panel" hidden>
+        <div class="signed-in-row"><span class="signed-in-check">✓</span><div><strong>Вход сохранён</strong><p id="signed-in-message">Сессия хранится на сервере в зашифрованном виде.</p></div></div>
+        <button id="logout-button" class="button ghost full-width" type="button">Выйти из приложения</button>
+      </div>
+      <div id="auth-status" class="inline-status" aria-live="polite">Для автоматической отметки сначала выполни вход.</div>
+    </section>
+
+    <section class="card scanner-card" aria-labelledby="scan-heading">
+      <div class="section-heading">
+        <div class="number">02</div>
+        <div>
+          <h2 id="scan-heading">Сканировать QR</h2>
+          <p>После считывания запрос на личную отметку отправится автоматически.</p>
+        </div>
+      </div>
+      <div class="camera-box">
+        <div id="reader" class="reader"><video id="camera-video" class="camera-video" playsinline muted autoplay></video></div>
+        <div id="camera-placeholder" class="camera-placeholder">
+          <div class="camera-symbol" aria-hidden="true">⌗</div>
+          <strong>Камера выключена</strong>
+          <span>Наведи рамку на QR-код занятия</span>
+        </div>
+      </div>
+      <div class="button-row">
+        <button id="start-camera" class="button primary" type="button"><span class="button-icon">◉</span> Включить камеру</button>
+        <button id="stop-camera" class="button ghost" type="button" disabled>Остановить</button>
+      </div>
+      <div id="camera-status" class="inline-status" aria-live="polite">Камера запустится только после нажатия.</div>
+      <label class="upload-button button ghost" for="qr-file">Выбрать изображение QR</label>
+      <input id="qr-file" type="file" accept="image/*" hidden>
+    </section>
+
+    <section class="card link-card" aria-labelledby="link-heading">
+      <div class="section-heading">
+        <div class="number">03</div>
+        <div>
+          <h2 id="link-heading">Вставить ссылку вручную</h2>
+          <p>Работает и если QR-код уже открыт в приложении Камера.</p>
+        </div>
+      </div>
+      <label class="field-label" for="url-input">URL из QR-кода</label>
+      <textarea id="url-input" rows="3" placeholder="Вставь ссылку сюда…" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+      <div class="button-row">
+        <button id="paste-url" class="button ghost" type="button">Вставить</button>
+        <button id="validate-url" class="button primary" type="button">Отметить по ссылке</button>
+      </div>
+    </section>
+
+    <section id="result-card" class="card result-card" aria-labelledby="result-heading" aria-live="polite">
+      <div class="result-symbol" id="result-symbol">i</div>
+      <div class="result-body">
+        <div class="result-label">ОТВЕТ СЕРВЕРА</div>
+        <h2 id="result-heading">Ожидаю QR-код</h2>
+        <p id="result-message">После сканирования будет проверена ссылка, а затем отправлен запрос для твоей сессии.</p>
+        <div id="result-host" class="host-chip" hidden></div>
+      </div>
+      <div id="result-lock" class="result-lock" aria-hidden="true">⌑</div>
+      <div class="result-actions" id="result-actions" hidden>
+        <button id="copy-url" class="button ghost" type="button">Скопировать ссылку</button>
+        <button id="share-url" class="button ghost" type="button">Поделиться</button>
+        <button id="open-url" class="button primary" type="button">Открыть официальный сайт</button>
+      </div>
+    </section>
+
+    <section class="notice">
+      <div class="notice-mark">!</div>
+      <div>
+        <strong>Безопасность и ограничения</strong>
+        <p>Это неофициальный клиент. Пароль не сохраняется, а сессия хранится на сервере в зашифрованном виде. Не вводи учётные данные на чужом или незнакомом хостинге. QR-токен отправляется на этот сервер для запроса личной отметки; реальный результат определяется ответом МИРЭА. Если сессия истекла, войди повторно.</p>
+      </div>
+    </section>
+
+    <footer>
+      <span>MIREA QR · неофициальный помощник</span>
+      <span>Только твой аккаунт · никаких паролей в браузерном хранилище</span>
+    </footer>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
